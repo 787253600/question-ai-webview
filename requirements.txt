@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+openai
+pywebview
+pytest
+httpx

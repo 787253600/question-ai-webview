@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI 题库助手</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">OCSJS Local Question API</p>
+        <h1>AI 题库助手</h1>
+        <p class="subtitle">填写 OpenAI 兼容接口配置，启动本地题库服务，并直接测试题目答案。</p>
+      </div>
+      <div class="endpoint-card">
+        <span>本地题库接口</span>
+        <code id="endpoint">http://127.0.0.1:5130/query</code>
+        <button id="copyEndpoint" type="button">复制</button>
+      </div>
+    </section>
+
+    <section class="grid">
+      <form id="configForm" class="card">
+        <div class="card-heading">
+          <p class="eyebrow">Step 1</p>
+          <h2>AI 接口配置</h2>
+        </div>
+
+        <label>
+          API Key
+          <div class="secret-row">
+            <input id="apiKey" name="api_key" type="password" autocomplete="off" placeholder="sk-...">
+            <button id="toggleSecret" type="button">显示</button>
+          </div>
+        </label>
+
+        <label>
+          AI Base URL
+          <input id="baseUrl" name="base_url" type="url" placeholder="https://openrouter.ai/api/v1">
+        </label>
+
+        <label>
+          模型名
+          <input id="model" name="model" type="text" placeholder="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free">
+        </label>
+
+        <button class="primary" type="submit">保存配置</button>
+        <p id="configStatus" class="status">正在读取配置...</p>
+      </form>
+
+      <form id="queryForm" class="card accent-card">
+        <div class="card-heading">
+          <p class="eyebrow">Step 2</p>
+          <h2>测试题目</h2>
+        </div>
+
+        <label>
+          题目
+          <textarea id="title" rows="5" placeholder="请输入题目内容"></textarea>
+        </label>
+
+        <label>
+          选项
+          <textarea id="options" rows="5" placeholder="A. 选项一&#10;B. 选项二"></textarea>
+        </label>
+
+        <label>
+          题型
+          <select id="questionType">
+            <option value="single">single 单选</option>
+            <option value="multiple">multiple 多选</option>
+            <option value="judgement">judgement 判断</option>
+            <option value="completion">completion 填空</option>
+          </select>
+        </label>
+
+        <button class="primary" type="submit">测试回答</button>
+
+        <div class="result">
+          <span>答案结果</span>
+          <strong id="answer">等待测试</strong>
+          <p id="queryStatus" class="status"></p>
+        </div>
+      </form>
+    </section>
+
+    <section class="card footer-card">
+      <div>
+        <p class="eyebrow">OCSJS 配置提示</p>
+        <h2>把题库 URL 指向本地服务</h2>
+        <p>启动本软件并保存配置后，在 OCSJS 的题库配置中使用下面的地址。</p>
+      </div>
+      <pre id="ocsSnippet">{
+  "name": "GPT题库",
+  "type": "GM_xmlhttpRequest",
+  "method": "post",
+  "url": "http://127.0.0.1:5130/query",
+  "headers": { "Content-Type": "application/json" },
+  "data": {
+    "title": "${title}",
+    "options": "${options}",
+    "type": "${type}"
+  },
+  "handler": "return (res)=> res.code === 1 ? [res.question, res.answer, { ai: true }] : [res.msg, undefined]"
+}</pre>
+      <button id="copySnippet" type="button">复制配置片段</button>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
