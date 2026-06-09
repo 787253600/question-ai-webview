@@ -18,6 +18,7 @@ DEFAULT_CONFIG = {
     "api_key": "",
     "base_url": "https://openrouter.ai/api/v1",
     "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    "port": 5130,
 }
 
 app = FastAPI(title="AI 题库助手")
@@ -36,6 +37,7 @@ class AppConfig(BaseModel):
     api_key: str = Field(min_length=1)
     base_url: str = Field(min_length=1)
     model: str = Field(min_length=1)
+    port: int = Field(default=5130, ge=1, le=65535)
 
 
 def read_config() -> dict:
@@ -72,11 +74,13 @@ def build_prompt(q: Query) -> str:
 选项：{q.options or "未提供"}
 
 返回规则：
-- single：只返回一个选项字母，如 A
-- multiple：只返回多个选项字母，并使用 # 分隔，如 A#C
-- judgement：只返回 正确 或 错误
-- completion：只返回填空答案内容
-- 如果无法确定答案，只返回 不知道
+- 只返回 JSON，不要使用 Markdown 代码块，格式为：{"answer":"最终答案","analysis":"简短解析"}
+- answer 只放最终答案，analysis 放简短解析
+- single：answer 只放一个选项字母，如 A
+- multiple：answer 只放多个选项字母，并使用 # 分隔，如 A#C
+- judgement：answer 只放 正确 或 错误
+- completion：answer 只放填空答案内容
+- 如果无法确定答案，answer 只放 不知道
 """.strip()
 
 
@@ -110,6 +114,20 @@ def normalize_answer(answer: str, question_type: str) -> str:
     return answer
 
 
+def parse_model_content(content: str, question_type: str) -> dict:
+    try:
+        payload = json.loads(content)
+    except json.JSONDecodeError:
+        return {"answer": normalize_answer(content, question_type), "analysis": ""}
+
+    if not isinstance(payload, dict):
+        return {"answer": normalize_answer(content, question_type), "analysis": ""}
+
+    raw_answer = str(payload.get("answer", ""))
+    analysis = str(payload.get("analysis", ""))
+    return {"answer": normalize_answer(raw_answer, question_type), "analysis": analysis}
+
+
 def ask_model(q: Query) -> dict:
     config = read_config()
     if not config["api_key"] or not config["base_url"] or not config["model"]:
@@ -125,8 +143,13 @@ def ask_model(q: Query) -> dict:
                 model=config["model"],
                 messages=[{"role": "user", "content": prompt}],
             )
-            answer = normalize_answer(response.choices[0].message.content.strip(), q.type)
-            return {"code": 1, "question": q.title, "answer": answer}
+            parsed = parse_model_content(response.choices[0].message.content.strip(), q.type)
+            return {
+                "code": 1,
+                "question": q.title,
+                "answer": parsed["answer"],
+                "analysis": parsed["analysis"],
+            }
         except Exception as exc:
             print(f"请求失败，第 {attempt + 1} 次重试，错误：{exc}")
             time.sleep(1)

@@ -5,20 +5,29 @@ from urllib.request import urlopen
 import uvicorn
 import webview
 
+from main import read_config
+
 HOST = "127.0.0.1"
-PORT = 5130
-URL = f"http://{HOST}:{PORT}/"
+DEFAULT_PORT = 5130
 
 
-def run_server() -> None:
-    uvicorn.run("main:app", host=HOST, port=PORT, log_level="info")
+def get_port() -> int:
+    return int(read_config().get("port", DEFAULT_PORT))
 
 
-def wait_for_server(timeout_seconds: float = 10, interval_seconds: float = 0.2) -> bool:
+def build_url(port: int) -> str:
+    return f"http://{HOST}:{port}/"
+
+
+def run_server(port: int) -> None:
+    uvicorn.run("main:app", host=HOST, port=port, log_level="info")
+
+
+def wait_for_server(url: str, timeout_seconds: float = 10, interval_seconds: float = 0.2) -> bool:
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
         try:
-            urlopen(URL, timeout=1)
+            urlopen(url, timeout=1)
             return True
         except OSError:
             time.sleep(interval_seconds)
@@ -26,10 +35,12 @@ def wait_for_server(timeout_seconds: float = 10, interval_seconds: float = 0.2) 
 
 
 def main() -> None:
-    server_thread = threading.Thread(target=run_server, daemon=True)
+    port = get_port()
+    url = build_url(port)
+    server_thread = threading.Thread(target=run_server, args=(port,), daemon=True)
     server_thread.start()
-    wait_for_server()
-    webview.create_window("AI 题库助手", URL, width=1180, height=820, min_size=(960, 680))
+    wait_for_server(url)
+    webview.create_window("AI 题库助手", url, width=1180, height=820, min_size=(960, 680))
     webview.start()
 
 

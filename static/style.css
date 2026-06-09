@@ -234,6 +234,18 @@ select:focus {
   overflow-wrap: anywhere;
 }
 
+.analysis-box {
+  margin-top: 18px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  padding-top: 16px;
+}
+
+.analysis-box p {
+  margin-bottom: 0;
+  color: #dbeafe;
+  line-height: 1.7;
+}
+
 .footer-card {
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) auto;
   align-items: center;

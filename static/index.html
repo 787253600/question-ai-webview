@@ -46,6 +46,11 @@
           <input id="model" name="model" type="text" placeholder="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free">
         </label>
 
+        <label>
+          服务端口
+          <input id="port" name="port" type="number" min="1" max="65535" step="1" placeholder="5130">
+        </label>
+
         <button class="primary" type="submit">保存配置</button>
         <p id="configStatus" class="status">正在读取配置...</p>
       </form>
@@ -82,6 +87,10 @@
           <span>答案结果</span>
           <strong id="answer">等待测试</strong>
           <p id="queryStatus" class="status"></p>
+          <div class="analysis-box">
+            <span>答案解析</span>
+            <p id="analysis">暂无解析</p>
+          </div>
         </div>
       </form>
     </section>
@@ -96,6 +105,7 @@
   "name": "GPT题库",
   "type": "GM_xmlhttpRequest",
   "method": "post",
+  "contentType": "json",
   "url": "http://127.0.0.1:5130/query",
   "headers": { "Content-Type": "application/json" },
   "data": {
@@ -103,7 +113,7 @@
     "options": "${options}",
     "type": "${type}"
   },
-  "handler": "return (res)=> res.code === 1 ? [res.question, res.answer, { ai: true }] : [res.msg, undefined]"
+  "handler": "return (res)=> res.code === 1 ? [res.question, res.answer, { ai: true, analysis: res.analysis }] : [res.msg, undefined]"
 }</pre>
       <button id="copySnippet" type="button">复制配置片段</button>
     </section>

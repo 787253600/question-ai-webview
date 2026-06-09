@@ -22,6 +22,7 @@ def test_get_config_returns_defaults_without_secret(monkeypatch, tmp_path):
         "api_key": "",
         "base_url": "https://openrouter.ai/api/v1",
         "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        "port": 5130,
     }
 
 
@@ -35,6 +36,7 @@ def test_save_config_persists_values(monkeypatch, tmp_path):
             "api_key": "sk-test",
             "base_url": "https://example.test/v1",
             "model": "test-model",
+            "port": 5200,
         },
     )
 
@@ -44,6 +46,7 @@ def test_save_config_persists_values(monkeypatch, tmp_path):
         "api_key": "sk-test",
         "base_url": "https://example.test/v1",
         "model": "test-model",
+        "port": 5200,
     }
 
 
@@ -100,6 +103,8 @@ def test_home_page_serves_ui(monkeypatch, tmp_path):
 
     assert response.status_code == 200
     assert "AI 题库助手" in response.text
+    assert "服务端口" in response.text
+    assert "答案解析" in response.text
 
 
 def test_single_choice_normalizes_prose_answer(monkeypatch, tmp_path):
@@ -118,3 +123,39 @@ def test_judgement_normalizes_negative_phrase(monkeypatch, tmp_path):
     app_module = load_app_with_temp_config(monkeypatch, tmp_path)
 
     assert app_module.normalize_answer("不正确", "judgement") == "错误"
+
+
+def test_save_config_rejects_invalid_port(monkeypatch, tmp_path):
+    app_module = load_app_with_temp_config(monkeypatch, tmp_path)
+    client = TestClient(app_module.app)
+
+    response = client.post(
+        "/config",
+        json={
+            "api_key": "sk-test",
+            "base_url": "https://example.test/v1",
+            "model": "test-model",
+            "port": 70000,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_parse_model_content_extracts_answer_and_analysis(monkeypatch, tmp_path):
+    app_module = load_app_with_temp_config(monkeypatch, tmp_path)
+
+    parsed = app_module.parse_model_content(
+        '{"answer":"The answer is B","analysis":"B 符合题意。"}',
+        "single",
+    )
+
+    assert parsed == {"answer": "B", "analysis": "B 符合题意。"}
+
+
+def test_parse_model_content_falls_back_for_plain_text(monkeypatch, tmp_path):
+    app_module = load_app_with_temp_config(monkeypatch, tmp_path)
+
+    parsed = app_module.parse_model_content("A and C", "multiple")
+
+    assert parsed == {"answer": "A#C", "analysis": ""}
