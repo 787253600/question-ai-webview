@@ -84,30 +84,28 @@ def normalize_answer(answer: str, question_type: str) -> str:
     answer = answer.strip()
     qtype = (question_type or "").strip().lower()
 
-    if qtype == "multiple":
-        letters = re.findall(r"[A-Z]", answer.upper())
-        if letters:
-            unique_letters = []
-            for letter in letters:
-                if letter not in unique_letters:
-                    unique_letters.append(letter)
+    if qtype in {"single", "multiple"}:
+        letters = re.findall(r"(?<![A-Z])[A-H](?![A-Z])", answer.upper())
+        unique_letters = []
+        for letter in letters:
+            if letter not in unique_letters:
+                unique_letters.append(letter)
+
+        if qtype == "single" and unique_letters:
+            return unique_letters[-1]
+        if qtype == "multiple" and unique_letters:
             return "#".join(unique_letters)
 
         parts = [part.strip() for part in re.split(r"[#,，,、/\s]+", answer) if part.strip()]
-        if parts:
+        if qtype == "multiple" and parts:
             return "#".join(parts)
-
-    if qtype == "single":
-        match = re.search(r"[A-Z]", answer.upper())
-        if match:
-            return match.group(0)
 
     if qtype == "judgement":
         lowered = answer.lower()
+        if any(token in lowered for token in ["不正确", "错误", "错", "false", "no", "×"]):
+            return "错误"
         if any(token in lowered for token in ["正确", "对", "true", "yes", "√"]):
             return "正确"
-        if any(token in lowered for token in ["错误", "错", "false", "no", "×"]):
-            return "错误"
 
     return answer
 

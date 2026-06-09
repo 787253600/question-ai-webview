@@ -11,6 +11,8 @@ venv/
 env/
 
 config.json
+main1.py
+main - 副本.py
 *.log
 
 .idea/

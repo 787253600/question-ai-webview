@@ -100,3 +100,21 @@ def test_home_page_serves_ui(monkeypatch, tmp_path):
 
     assert response.status_code == 200
     assert "AI 题库助手" in response.text
+
+
+def test_single_choice_normalizes_prose_answer(monkeypatch, tmp_path):
+    app_module = load_app_with_temp_config(monkeypatch, tmp_path)
+
+    assert app_module.normalize_answer("The answer is B", "single") == "B"
+
+
+def test_multiple_choice_normalizes_prose_answer(monkeypatch, tmp_path):
+    app_module = load_app_with_temp_config(monkeypatch, tmp_path)
+
+    assert app_module.normalize_answer("A and C", "multiple") == "A#C"
+
+
+def test_judgement_normalizes_negative_phrase(monkeypatch, tmp_path):
+    app_module = load_app_with_temp_config(monkeypatch, tmp_path)
+
+    assert app_module.normalize_answer("不正确", "judgement") == "错误"
