@@ -1,4 +1,6 @@
 import importlib
+import json
+import sys
 
 from fastapi.testclient import TestClient
 
@@ -24,6 +26,34 @@ def test_get_config_returns_defaults_without_secret(monkeypatch, tmp_path):
         "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
         "port": 5130,
     }
+
+
+def test_read_config_creates_missing_config_file(monkeypatch, tmp_path):
+    app_module = load_app_with_temp_config(monkeypatch, tmp_path)
+
+    config = app_module.read_config()
+
+    assert app_module.CONFIG_PATH.exists()
+    assert json.loads(app_module.CONFIG_PATH.read_text(encoding="utf-8")) == app_module.DEFAULT_CONFIG
+    assert config == app_module.DEFAULT_CONFIG
+
+
+def test_frozen_config_path_uses_executable_directory(monkeypatch, tmp_path):
+    import main
+
+    executable_path = tmp_path / "AIQuestionHelper.exe"
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "_MEIPASS", str(tmp_path / "_MEI12345"), raising=False)
+    monkeypatch.setattr(sys, "executable", str(executable_path))
+
+    app_module = importlib.reload(main)
+
+    assert app_module.CONFIG_PATH == tmp_path / "config.json"
+    assert app_module.CONFIG_PATH.parent != tmp_path / "_MEI12345"
+
+    monkeypatch.delattr(sys, "frozen", raising=False)
+    monkeypatch.delattr(sys, "_MEIPASS", raising=False)
+    importlib.reload(main)
 
 
 def test_save_config_persists_values(monkeypatch, tmp_path):

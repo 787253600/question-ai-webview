@@ -18,11 +18,18 @@ def test_wait_for_server_retries_until_ready(monkeypatch):
     attempts = []
     url = desktop.build_url(5130)
 
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
     def fake_urlopen(request_url, timeout):
         attempts.append((request_url, timeout))
         if len(attempts) < 3:
             raise OSError("not ready")
-        return object()
+        return FakeResponse()
 
     monkeypatch.setattr(desktop, "urlopen", fake_urlopen)
     monkeypatch.setattr(desktop.time, "sleep", lambda seconds: None)

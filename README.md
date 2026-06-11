@@ -12,6 +12,10 @@
 - 提供 OCSJS 兼容的 `/query` GET/POST 接口
 - 返回格式兼容 OCSJS 题库 handler
 
+## 新手学习文档
+
+如果你想从项目建立、代码结构、运行测试到打包发布完整学习一遍，可以阅读：[`docs/python-newbie-release-guide.md`](docs/python-newbie-release-guide.md)。
+
 ## 安装
 
 建议使用 Python 3.12。
